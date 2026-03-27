@@ -11,8 +11,9 @@ from __future__ import annotations
 import glob
 import os
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -392,3 +393,60 @@ def get_train_test(
     X_test = scaler.transform(X_test)
 
     return X_train, X_test, y_train, y_test
+
+
+# ---------------------------------------------------------------------------
+# Feature matrix for unsupervised / evaluation use
+# ---------------------------------------------------------------------------
+
+def build_feature_matrix(
+    ibm_raw: pd.DataFrame,
+    patterns_df: pd.DataFrame | None = None,
+) -> Tuple[np.ndarray, pd.Series, List[str]]:
+    """Engineer features, scale, and return a ready-to-use feature matrix.
+
+    Convenience wrapper around engineer_features + StandardScaler so callers
+    don't need to repeat the 3-step pattern inline.
+
+    Parameters
+    ----------
+    ibm_raw : raw IBM transactions (output of load_ibm or clean_ibm)
+    patterns_df : output of parse_ibm_patterns (optional)
+
+    Returns
+    -------
+    X_scaled : np.ndarray, shape (n_samples, n_features)
+    y        : pd.Series of Is Laundering labels
+    cols     : list of feature column names (same order as X_scaled columns)
+    """
+    feat = engineer_features(ibm_raw, patterns_df)
+    cols = [c for c in FEATURE_COLS if c in feat.columns]
+    X = feat[cols].values
+    y = feat[TARGET_COL]
+    X_scaled = StandardScaler().fit_transform(X)
+    return X_scaled, y, cols
+
+
+# ---------------------------------------------------------------------------
+# Transaction graph
+# ---------------------------------------------------------------------------
+
+def build_transaction_graph(
+    df: pd.DataFrame,
+    max_edges: int = 50_000,
+) -> nx.DiGraph:
+    """Build a directed transaction graph from a cleaned IBM DataFrame.
+
+    Parameters
+    ----------
+    df : output of clean_ibm (must have sender_id and receiver_id columns)
+    max_edges : cap on number of edges to keep graph tractable
+
+    Returns
+    -------
+    nx.DiGraph with sender_id → receiver_id edges
+    """
+    G = nx.DiGraph()
+    sample = df[["sender_id", "receiver_id"]].dropna().head(max_edges)
+    G.add_edges_from(zip(sample["sender_id"], sample["receiver_id"]))
+    return G

@@ -23,6 +23,10 @@ dependencies:
   # Jupyter support
   - ipykernel
 
+  # Testing
+  - pytest
+  - pytest-timeout
+
   # PyTorch (Apple Silicon compatible)
   - pytorch
   - torchvision

@@ -11,8 +11,10 @@ from typing import Dict, List
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.decomposition import PCA
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
+    auc,
     average_precision_score,
     confusion_matrix,
     f1_score,
@@ -179,5 +181,87 @@ def plot_confusion_matrices(
         ax.set_visible(False)
 
     fig.suptitle("Confusion Matrices", fontsize=14, y=1.02)
+    fig.tight_layout()
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Score-array-based plots (for unsupervised models)
+# ---------------------------------------------------------------------------
+
+_PALETTE = ["#e74c3c", "#f39c12", "#3498db", "#9b59b6", "#2ecc71"]
+
+
+def plot_pr_roc_curves(
+    scores_dict: Dict[str, np.ndarray],
+    y_true: np.ndarray,
+) -> plt.Figure:
+    """Side-by-side Precision-Recall and ROC curves from raw score arrays.
+
+    Parameters
+    ----------
+    scores_dict : {model_name: anomaly_score_array}  (higher = more anomalous)
+    y_true      : ground-truth binary labels
+    """
+    fig, axes = plt.subplots(1, 2, figsize=(18, 7))
+
+    for ax_idx, (curve_fn, xlabel, ylabel, title) in enumerate([
+        (precision_recall_curve, "Recall",  "Precision", "Precision-Recall"),
+        (roc_curve,              "FPR",     "TPR",       "ROC"),
+    ]):
+        ax = axes[ax_idx]
+        for (name, scores), color in zip(scores_dict.items(), _PALETTE):
+            if curve_fn == precision_recall_curve:
+                p, r, _ = curve_fn(y_true, scores)
+                ap = average_precision_score(y_true, scores)
+                ax.plot(r, p, color=color, linewidth=2.5, label=f"{name} (AP={ap:.3f})")
+            else:
+                fpr, tpr, _ = curve_fn(y_true, scores)
+                a = auc(fpr, tpr)
+                ax.plot(fpr, tpr, color=color, linewidth=2.5, label=f"{name} (AUC={a:.3f})")
+        if curve_fn == roc_curve:
+            ax.plot([0, 1], [0, 1], "k--", alpha=0.3)
+        ax.set_title(f"{title} Curve", fontsize=15, fontweight="bold")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.legend(fontsize=10)
+
+    fig.tight_layout()
+    return fig
+
+
+def plot_pca_projection(
+    X_scaled: np.ndarray,
+    y_true: np.ndarray,
+    ensemble_scores: np.ndarray,
+    random_state: int = 42,
+) -> plt.Figure:
+    """2-panel PCA scatter: true labels on the left, ensemble score heatmap on the right.
+
+    Parameters
+    ----------
+    X_scaled        : scaled feature matrix (n_samples, n_features)
+    y_true          : binary ground-truth labels
+    ensemble_scores : continuous anomaly scores (higher = more anomalous)
+    """
+    pca = PCA(n_components=2, random_state=random_state)
+    X_pca = pca.fit_transform(X_scaled)
+
+    fig, axes = plt.subplots(1, 2, figsize=(18, 7))
+
+    ax = axes[0]
+    ax.scatter(X_pca[y_true == 0, 0], X_pca[y_true == 0, 1],
+               c="#2ecc71", alpha=0.1, s=3, label="Clean")
+    ax.scatter(X_pca[y_true == 1, 0], X_pca[y_true == 1, 1],
+               c="#e74c3c", alpha=0.4, s=8, label="Laundering")
+    ax.set_title("PCA — True Labels", fontsize=14, fontweight="bold")
+    ax.legend(markerscale=5)
+
+    ax = axes[1]
+    sc = ax.scatter(X_pca[:, 0], X_pca[:, 1],
+                    c=ensemble_scores, cmap="RdYlGn_r", alpha=0.3, s=5)
+    plt.colorbar(sc, ax=ax, label="Ensemble Score")
+    ax.set_title("PCA — Ensemble Anomaly Score", fontsize=14, fontweight="bold")
+
     fig.tight_layout()
     return fig

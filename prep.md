@@ -2,7 +2,7 @@
 
 ## What The Project Is (30-second pitch)
 
-We built an anti-money laundering (AML) transaction detection system. It merges two labeled datasets — IBM's real bank transaction data and SAML-D synthetic AML data — engineers historical behavioral features per account, and benchmarks several tree ensemble models to flag suspicious transactions. The goal is to rank transactions by fraud probability so investigators can triage the highest-risk alerts first.
+We built an anti-money laundering (AML) transaction detection system. It merges two labeled datasets — IBM's synthetic bank transaction data and SAML-D synthetic AML data — engineers historical behavioral features per account, and benchmarks several tree ensemble models to flag suspicious transactions. The goal is to rank transactions by fraud probability so investigators can triage the highest-risk alerts first.
 
 ---
 
@@ -246,7 +246,7 @@ Note: a threshold of 0.925 is unusually high. This means the model is very confi
 ## Likely Check-In Questions & Answers
 
 **Q: Why did you merge two datasets instead of just using one?**
-> "Each dataset has limitations. IBM has real transactions but no laundering type labels. SAML-D has structured typology labels but is synthetic. Merging gives us more data diversity and a larger fraud class, which improves model training."
+> "Each dataset has limitations. IBM has transaction data but no laundering type labels. SAML-D has structured typology labels. Merging gives us more data diversity and a larger fraud class, which improves model training."
 
 **Q: Why did you use a scatter/bar/KDE instead of [other chart]?**
 > See per-visualization "Why X instead of Y" explanations above.

@@ -14,7 +14,7 @@ Two datasets, merged into one:
 
 | Dataset | Description | Key columns |
 |---|---|---|
-| **IBM HI-Small_Trans.csv** | Real bank transaction records with fraud labels | Timestamp, From/To Bank+Account, Amount Paid/Received, Payment Format, `Is_Laundering` |
+| **IBM HI-Small_Trans.csv** | bank transaction records with fraud labels | Timestamp, From/To Bank+Account, Amount Paid/Received, Payment Format, `Is_Laundering` |
 | **SAML-D** | Synthetic AML transactions with laundering type labels | Date, Time, Sender/Receiver account, Amount, Currency, Payment type, `Is_laundering`, `Laundering_type` |
 
 Both are normalized to a **15-column unified schema**: `source_dataset`, `timestamp`, `from_bank`, `from_account`, `to_bank`, `to_account`, `transaction_amount`, `amount_paid`, `amount_received`, `payment_currency`, `receiving_currency`, `payment_format`, `transaction_type`, `laundering_type`, `is_laundering`.
